@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Check the domain returned with dsconfigad
+domain=$( dsconfigad -show | awk '/Active Directory Domain/{print $NF}' )
+
+# Unjoin Domain if connected to ACN
+if [[ "$domain" == "acn.ad.nmsu.edu" ]]; then
+	echo "Computer is joined to the ACN domain.  Unjoining and deleting computer object!"
+	dsconfigad -remove -force -u adminmal -p 
+	dscl /Search -delete / CSPSearchPath "/Active Directory/All Domains"
+	dscl /Search/Contacts -delete / CSPSearchPath "/Active Directory/All Domains"
+elif [[ "$domain" == "bae.ad.nmsu.edu" ]]; then
+	echo "Computer is joined to the BA&E domain. Error logic not implemented!"
+    exit 1
+   	# Need to limit CSPSSearchPath to BAE domain?
+    #dsconfigad -remove -force -u adminmal -p 
+	#dscl /Search -delete / CSPSearchPath "/Active Directory/All Domains"
+	#dscl /Search/Contacts -delete / CSPSearchPath "/Active Directory/All Domains"
+fi
