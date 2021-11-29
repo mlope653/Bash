@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# Name    : postImage0_SetComputerName.sh
+# Author  : Snickasaurus
+# Date    : 20141113
+# Purpose : Set machine name and stamp fv2 file.
+
+# Variables
+theSerial=$(system_profiler SPHardwareDataType | awk '/Serial/ {print $4}')
+theModel=$(system_profiler SPHardwareDataType | grep 'Model Name:' | awk '{ print $3 }')
+
+# Logging
+exec 3>&1 4>&2
+trap 'exec 2>&4 1>&3' 0 1 2 3
+exec 1>>/private/var/log/postImage0-"$(date "+%Y%m%d-%H%M%S")".log 2>&1
+
+# Begin script
+# Echo the current name settings to the log file.
+echo "-----"
+echo "-"
+echo "-"
+echo "Current ComputerName is: $(scutil --get ComputerName)"
+echo "Current HostName is: $(scutil --get HostName)"
+echo "Current LocalHostName is: $(scutil --get LocalHostName)"
+echo "Current NetBIOSName is: $(defaults read /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName)"
+echo "-"
+echo "-"
+echo "-----"
+
+# Check for the model type and set it's name accordingly.
+if [[ "$theModel" == "MacBook" ]]
+    then
+    scutil --set ComputerName "L-$theSerial"
+    scutil --set HostName "L-$theSerial"
+    scutil --set LocalHostName "L-$theSerial"
+    defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName "L-$theSerial"
+    jamf setComputerName -name "L-$theSerial"
+else
+    scutil --set ComputerName "D-$theSerial"
+    scutil --set HostName "D-$theSerial"
+    scutil --set LocalHostName "D-$theSerial"
+    defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName "D-$theSerial"
+    jamf setComputerName -name "D-$theSerial"
+fi
+
+# Space out the name lines.
+echo " "
+echo " "
+
+# Echo the new name settings to the log file.
+echo "-----"
+echo "-"
+echo "-"
+echo "New ComputerName is: $(scutil --get ComputerName)"
+echo "New HostName is: $(scutil --get HostName)"
+echo "New LocalHostName is: $(scutil --get LocalHostName)"
+echo "New NetBIOSName is: $(defaults read /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName)"
+echo "-"
+echo "-"
+echo "-----"
+
+jamf recon
+
+exit 0
