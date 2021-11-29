@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Get Ip Address and associated DNS Name
+Interface=$(route get 8.8.8.8 | grep interface: | awk '{print $2'})
+IP=$(ipconfig getifaddr $Interface)
+DNSName=$(dig -x $IP +short |  awk -F '.' '{print $1}')
+echo "IP = $IP and DNS Name = $DNSName"
+
+# Begin script
+# Echo the current name settings to the log file.
+echo "-----"
+echo "Current ComputerName is: $(scutil --get ComputerName)"
+echo "Current HostName is: $(scutil --get HostName)"
+echo "Current LocalHostName is: $(scutil --get LocalHostName)"
+echo "Current NetBIOSName is: $(defaults read /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName)"
+echo "-----"
+
+# Set New Computer Name
+scutil --set ComputerName "$DNSName"
+scutil --set HostName "$DNSName"
+scutil --set LocalHostName "$DNSName"
+defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName "$DNSName"
+jamf setComputerName -name "$DNSName"
+
+# Echo the new name settings to the log file.
+echo "-----"
+echo "New ComputerName is: $(scutil --get ComputerName)"
+echo "New HostName is: $(scutil --get HostName)"
+echo "New LocalHostName is: $(scutil --get LocalHostName)"
+echo "New NetBIOSName is: $(defaults read /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName)"
+echo "-----"
+
+exit 0
