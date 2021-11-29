@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#Set New Computer Name
+set -x
+echo "add State:/Network/Interface/en0/RefreshConfiguration temporary" | sudo scutil
+sleep 1
+echo "add State:/Network/Interface/en1/RefreshConfiguration temporary" | sudo scutil
+sleep 1
+
+scacheutil -flushcache
+sleep 1
+
+Computername=`defaults read /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName`
+
+sudo scutil --set LocalHostName $Computername
+                sleep 1
+sudo scutil --set ComputerName $Computername
+                sleep 1
+sudo scutil --set HostName $Computername
+                sleep 1
+
+sudo jamf setComputerName -name $Computername
+sleep 1
+
+sudo jamf recon
+
+                exit 0
