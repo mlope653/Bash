@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# Set variables
+userName="${3}"
+protocol="${4}"
+sharePath="${5}"
+adGroup="${6}"
+userAppend="${7}"
+fullPath="${protocol}://${sharePath}"
+
+# Append Username?
+if [[ "$userAppend" = "y" ]]; then
+	trimmed=$(echo "$fullPath" | sed 's:/*$::')
+	fullPath="${trimmed}/${userName}"
+fi
+
+# Create Needed Functions
+writelog () {
+	logProcess="ShareConnect: "
+	/usr/bin/logger -is -t "${logProcess}" "${1}"
+	if [[ -e "/var/log/jamf.log" ]]; then
+    	/bin/echo "$(date +"%a %b %d %T") $(hostname -f | awk -F "." '{print $1}') jamf[${logProcess}]: ${1}" >> "/var/log/jamf.log"
+	fi
+}
+
+Group_Ready() {
+    if [[ -z "$adGroup" ]]; then
+        writelog "Group check PASS (None Specified)"
+        return 0
+    else
+    	dseditgroup -v -o checkmember -m "$userName" "$adGroup" 
+    	groupCheck=$(dseditgroup -o checkmember -m "$userName" "$adGroup" | grep -c "yes")
+    	groupList=$(id -Gn "$userName")
+        if [[ "${groupCheck}" -eq 1 ]]; then
+          writelog "Group check PASS"
+          return 0
+        else
+          writelog "Group check FAIL ($userName not in $adGroup)"
+          return 1
+        fi
+    fi
+}
+
+Finder_Ready() {
+    Loop_End=$((SECONDS + 60))
+    while [[ -z "$(ps -c -u "$userName" | awk /CoreServicesUIAgent/)" ]] && [[ $SECONDS -lt $Loop_End ]]; do
+        sleep 10
+    done
+    if [[ "$(ps -c -u "$userName" | awk /Finder/)" ]]; then
+        writelog "Finder check PASS"
+        return 0
+    else
+        writelog "Finder check FAIL"
+        return 1
+    fi
+}
+
+Not_Mounted() {
+    if mount | grep -q "${userName}@${sharePath}"; then
+        writelog "Mount check FAIL already mounted"
+        return 1
+    else
+        writelog "Mount check PASS"
+        return 0
+    fi
+}
+
+Mount_Drive() {
+    writelog "Attempting to mount"
+    sudo -u "$userName" osascript -e 'mount volume "'"$fullPath"'"'
+}
+
+# Attempt Share Mounting
+if Group_Ready && Finder_Ready && Not_Mounted; then
+    writelog "Mapping '${fullPath}' for '${userName}'"
+    sleep 4
+    Mount_Drive
+else
+    writelog "Conditions not met to attempt drive mounting"
+    exit 1
+fi
