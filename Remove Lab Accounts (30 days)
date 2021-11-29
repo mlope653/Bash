@@ -1,0 +1,15 @@
+#!/bin/sh
+
+users=`find /Users -type d -maxdepth 1 -mtime +30 | cut -d"/" -f3`
+cuser=`stat -f "%Su" /dev/console`
+
+for i in $users; do
+    if [[ $i = "citadmin" ]] || [[ $i = "Shared" ]] || [[ $i = "admin" ]] || [[ $i = $cuser ]]; 
+    then
+	echo $i "(Protected)"
+	continue
+    else 
+        jamf deleteAccount -username $i -deleteHomeDirectory
+        rm -Rf /Users/$i
+    fi
+done
