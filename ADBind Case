@@ -1,0 +1,11 @@
+#!/bin/bash
+
+case "$4" in
+	cit) jamf policy -id 229 ;;
+    citlabs) jamf policy -id 710 ;;
+    citclassrooms) jamf policy -id 231 ;;
+    coas) jamf policy -id 234 ;;
+    coe) jamf policy -id 232 ;;
+    cob) jamf policy -id 222 ;;
+    *) jamf policy -id 233 ;;
+esac
