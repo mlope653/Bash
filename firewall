@@ -1,0 +1,32 @@
+#!/bin/bash
+r1="block return in proto {udp, tcp} from any to any port 22"
+r2="block in proto {udp, tcp} from any to any port {3238, 88, 5988, 5900}"
+r3="block in proto {udp, tcp} from any to any port {88,749}"
+r4="pass in inet proto {udp, tcp} from {128.123.0.0/16, 172.24.0.0/16, 10.88.0.0/16, 10.253.224.0/19, 10.253.0.0/16 } to any port 22 no state"
+r5="pass in inet proto {udp,tcp} from {128.123.0.0/16, 172.24.0.0/16, 10.88.0.0/16, 10.253.224.0/19, 10.253.0.0/16 } to any port {3238, 88, 5988, 5900} no state"
+r6="pass in inet proto {udp,tcp} from {128.123.0.0/16, 172.24.0.0/16, 10.88.0.0/16, 10.253.224.0/19, 10.253.0.0/16 } to any port {88,749} no state"
+
+cFile="/etc/pf.conf"
+
+# Test for rules and add them to config file
+if ! grep -q "$r1" "$cFile"; then
+    echo "$r1" >> "$cFile"
+fi
+if ! grep -q "$r2" "$cFile"; then
+    echo "$r2" >> "$cFile"
+fi
+if ! grep -q "$r3" "$cFile"; then
+    echo "$r3" >> "$cFile"
+fi
+if ! grep -q "$r4" "$cFile"; then
+    echo "$r4" >> "$cFile"
+fi
+if ! grep -q "$r5" "$cFile"; then
+    echo "$r5" >> "$cFile"
+fi
+if ! grep -q "$r6" "$cFile"; then
+    echo "$r6" >> "$cFile"
+fi
+# Apply Config File Changes
+pfctl -f "$cFile"
+pfctl -E
