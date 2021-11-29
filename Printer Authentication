@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Authenticate all mapped printers
+
+#get the list of mapped printers and copy to temp file
+#all network printer names in caps - filter non-printer text
+lpstat -p | awk '{print $2}' | grep [A-Z] > /private/tmp/authPrinterList.txt
+
+#read through mapped printer list and apply authentication
+while read printerName
+do
+    lpadmin -p $printerName -o auth-info-required=negotiate
+done < /private/tmp/authPrinterList.txt
+
+exit 0
